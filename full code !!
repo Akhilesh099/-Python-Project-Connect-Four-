@@ -1,0 +1,104 @@
+import numpy as np
+import tkinter as tk
+from tkinter import messagebox
+
+ROWS = 6
+COLUMNS = 7
+SQUARESIZE = 100
+RADIUS = SQUARESIZE//2 - 5
+
+class ConnectFour:
+    def __init__(self):
+        self.board = np.zeros((ROWS, COLUMNS))
+        self.turn = 0
+        self.game_over = False
+
+        self.root = tk.Tk()
+        self.root.title("Connect Four")
+        self.canvas = tk.Canvas(self.root, width=COLUMNS*SQUARESIZE, height=(ROWS+1)*SQUARESIZE)
+        self.canvas.pack()
+
+        self.draw_board()
+
+        self.canvas.bind("<Button-1>", self.click)
+
+    def draw_board(self):
+        self.canvas.delete("all")
+        for c in range(COLUMNS):
+            for r in range(ROWS):
+                x0 = c * SQUARESIZE
+                y0 = (r+1) * SQUARESIZE
+                x1 = x0 + SQUARESIZE
+                y1 = y0 + SQUARESIZE
+                self.canvas.create_rectangle(x0, y0, x1, y1, fill="blue")
+                if self.board[r][c] == 0:
+                    self.canvas.create_oval(x0+5, y0+5, x1-5, y1-5, fill="white")
+                elif self.board[r][c] == 1:
+                    self.canvas.create_oval(x0+5, y0+5, x1-5, y1-5, fill="red")
+                else:
+                    self.canvas.create_oval(x0+5, y0+5, x1-5, y1-5, fill="yellow")
+
+    def click(self, event):
+        if self.game_over:
+            return
+
+        col = event.x // SQUARESIZE
+        if not self.is_valid_location(col):
+            return
+
+        row = self.get_next_open_row(col)
+        self.drop_piece(row, col, self.turn + 1)
+
+        if self.winning_move(self.turn + 1):
+            self.game_over = True
+            winner = "Player 1" if self.turn == 0 else "Player 2"
+            messagebox.showinfo("Connect Four", f"{winner} wins!")
+            return
+
+        self.turn += 1
+        self.turn %= 2
+
+        self.draw_board()
+
+    def is_valid_location(self, col):
+        return self.board[ROWS-1][col] == 0
+
+    def get_next_open_row(self, col):
+        for r in range(ROWS):
+            if self.board[r][col] == 0:
+                return r
+
+    def drop_piece(self, row, col, piece):
+        self.board[row][col] = piece
+
+    def winning_move(self, piece):
+        # Check horizontal locations
+        for c in range(COLUMNS-3):
+            for r in range(ROWS):
+                if self.board[r][c] == piece and self.board[r][c+1] == piece and self.board[r][c+2] == piece and self.board[r][c+3] == piece:
+                    return True
+
+        # Check vertical locations
+        for c in range(COLUMNS):
+            for r in range(ROWS-3):
+                if self.board[r][c] == piece and self.board[r+1][c] == piece and self.board[r+2][c] == piece and self.board[r+3][c] == piece:
+                    return True
+
+        # Check positively sloped diagonals
+        for c in range(COLUMNS-3):
+            for r in range(ROWS-3):
+                if self.board[r][c] == piece and self.board[r+1][c+1] == piece and self.board[r+2][c+2] == piece and self.board[r+3][c+3] == piece:
+                    return True
+
+        # Check negatively sloped diagonals
+        for c in range(COLUMNS-3):
+            for r in range(3, ROWS):
+                if self.board[r][c] == piece and self.board[r-1][c+1] == piece and self.board[r-2][c+2] == piece and self.board[r-3][c+3] == piece:
+                    return True
+
+    def start(self):
+        self.root.mainloop()
+
+if __name__ == "__main__":
+    game = ConnectFour()
+    game.start()
